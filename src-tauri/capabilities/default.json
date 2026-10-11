@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The main window: the app's own api command, events from the core, and the file picker.",
+  "windows": ["main"],
+  "permissions": ["core:default", "core:event:default", "dialog:allow-open"]
+}

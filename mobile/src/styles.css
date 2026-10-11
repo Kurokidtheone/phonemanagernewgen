@@ -1,0 +1,55 @@
+/* The desktop tokens (colours, one accent per section, light and dark) are imported, not copied. */
+@import '../../src/renderer/src/styles.css';
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    font-family: system-ui, 'Noto Sans Arabic', Roboto, sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  input, textarea { user-select: text; }
+}
+
+/* Dark mode follows the phone: the desktop file switches on a .dark class, so mirror the media query. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --paper: #111514; --card: #1a201e; --ink: #e8ece8; --muted: #98a29c; --line: #2b3430;
+    --action: #2aa888; --ok: #4ade80; --danger: #f97066; color-scheme: dark;
+  }
+  :root:not(.light) [data-accent='teal'] { --accent: #45cdb9; }
+  :root:not(.light) [data-accent='blue'] { --accent: #6ab0ee; }
+  :root:not(.light) [data-accent='purple'] { --accent: #a98cec; }
+  :root:not(.light) [data-accent='orange'] { --accent: #f0a05a; }
+  :root:not(.light) [data-accent='green'] { --accent: #5fd08a; }
+  :root:not(.light) [data-accent='pink'] { --accent: #f07cbd; }
+  :root:not(.light) [data-accent='neutral'] { --accent: #98a29c; }
+  :root:not(.light) [data-accent='olive'] { --accent: #c9c95a; }
+}
+
+/* The camera is drawn behind the WebView while scanning: everything except the scan overlay is hidden. */
+html.scanning, html.scanning body, html.scanning #root { background: transparent !important; }
+html.scanning body * { visibility: hidden; }
+html.scanning .scan-overlay, html.scanning .scan-overlay * { visibility: visible; }
+
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* The phone's look: black and yellow like the app icon, one accent everywhere, white paper, almost no boxes.
+   Imported desktop tokens give each section its own colour; here every section shares one. */
+:root {
+  --paper: #ffffff; --card: #f5f5f2; --ink: #17191c; --muted: #6b7075; --line: #e6e6e1;
+  --action: #17191c; --on-action: #ffffff; --accent: #9a6b00;
+}
+[data-accent] { --accent: #9a6b00; }
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --paper: #0f1113; --card: #1a1d20; --ink: #f1f1ec; --muted: #9a9fa4; --line: #2a2e32;
+    --action: #fdc10e; --on-action: #17191c; --accent: #fdc10e;
+  }
+  :root:not(.light) [data-accent] { --accent: #fdc10e; }
+}

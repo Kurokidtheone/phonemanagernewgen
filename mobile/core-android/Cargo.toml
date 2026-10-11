@@ -1,0 +1,20 @@
+[package]
+name = "psm-android"
+version.workspace = true
+edition.workspace = true
+description = "The Rust core as a library for the Android app: stand-alone mode (phase 18)"
+
+[lib]
+name = "psm_android"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+psm-core = { path = "../../core" }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "time"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+
+[dev-dependencies]
+tempfile = "3"

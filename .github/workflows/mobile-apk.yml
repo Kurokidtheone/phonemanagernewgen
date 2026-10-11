@@ -1,0 +1,67 @@
+name: Build signed Android APK
+# Run it by hand (Actions > Build signed Android APK), on a tag, or from the installer workflow, which packs
+# the APK into the desktop installer.
+#
+# Repository secrets (Settings > Secrets and variables > Actions). Never commit the keystore or its passwords:
+#   ANDROID_KEYSTORE_BASE64    base64 of mobile/android/release.keystore   (base64 -i release.keystore)
+#   ANDROID_KEYSTORE_PASSWORD  its store password
+#   ANDROID_KEY_ALIAS          the key alias ("release" for the keystore made by npm run android:keystore)
+#   ANDROID_KEY_PASSWORD       the key password
+# Updates must always be signed with the same keystore: keep a backup of it offline.
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      # Not "required": a caller without them would fail before any job starts. The step below says what is missing.
+      ANDROID_KEYSTORE_BASE64: { required: false }
+      ANDROID_KEYSTORE_PASSWORD: { required: false }
+      ANDROID_KEY_ALIAS: { required: false }
+      ANDROID_KEY_PASSWORD: { required: false }
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: "package-lock.json\nmobile/package-lock.json" }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - uses: android-actions/setup-android@v3
+      # The Rust core is packed in the APK as libpsm_android.so (stand-alone phone edition, phase 18).
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: 'aarch64-linux-android,armv7-linux-androideabi' }
+      - uses: nttld/setup-ndk@v1
+        id: ndk
+        with: { ndk-version: r27c }
+      # The phone app imports the desktop's shared code and types, so the root packages are needed too.
+      - run: npm ci --ignore-scripts
+      - run: npm ci
+        working-directory: mobile
+      - run: npm test
+        working-directory: mobile
+      - name: Write the signing files from the secrets
+        working-directory: mobile/android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for v in KEYSTORE_BASE64 STORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "::error::Missing signing secret for $v (see the top of mobile-apk.yml)"; exit 1; fi
+          done
+          echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+          printf 'storeFile=release.keystore\nstoreType=pkcs12\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
+      - run: node scripts/build-android-core.mjs arm64-v8a armeabi-v7a
+        working-directory: mobile
+        env:
+          ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+      - run: npm run android:apk
+        working-directory: mobile
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: |
+            dist/*-mobile-*.apk
+            build/mobile/app.apk
+            build/mobile/app.json

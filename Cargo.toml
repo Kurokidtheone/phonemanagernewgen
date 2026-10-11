@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = ["wire", "remote", "core", "src-tauri", "mobile/core-android"]
+
+[workspace.package]
+edition = "2021"
+version = "1.5.8"
+
+# Smaller libraries: the Android app ships the core as a .so.
+[profile.release]
+lto = "thin"
+strip = true

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Phone Store Manager</string>
+    <string name="title_activity_main">Phone Store Manager</string>
+    <string name="package_name">dz.phonestoremanager.app.mobile</string>
+    <string name="custom_url_scheme">dz.phonestoremanager.app.mobile</string>
+</resources>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>License desk</title>
+<style>
+  :root {
+    --paper: #eef1f0; --card: #ffffff; --ink: #16242b; --muted: #5d6b70;
+    --line: #d3dbd9; --brass: #9a6c14; --brass-soft: #f6ecd6;
+    --ok: #1f7a4d; --ok-soft: #e2f3ea; --bad: #b3372e; --bad-soft: #f9e4e1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10191d; --card: #18252b; --ink: #e8eeec; --muted: #9aaab0;
+      --line: #2c3d44; --brass: #e0b458; --brass-soft: #33290f;
+      --ok: #5fd39a; --ok-soft: #12301f; --bad: #ff8d82; --bad-soft: #3a1714;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 20px 16px 64px; }
+  h1 { font-size: 1.6rem; margin: 8px 0 2px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.1rem; margin: 0 0 4px; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); font-size: 0.92rem; }
+
+  .keybar {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    margin: 16px 0; padding: 12px 14px; border-radius: 10px;
+    background: var(--bad-soft); border: 1px solid var(--bad);
+  }
+  .keybar.loaded { background: var(--ok-soft); border-color: var(--ok); }
+  .keybar strong { flex: 1 1 200px; }
+
+  nav { display: flex; gap: 4px; border-bottom: 2px solid var(--line); margin-bottom: 16px; overflow-x: auto; }
+  nav button {
+    background: none; border: 0; color: var(--muted); font: inherit; font-weight: 600;
+    padding: 10px 14px; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap;
+  }
+  nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brass); }
+
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  section[hidden] { display: none; }
+  label { display: block; font-weight: 600; font-size: 0.92rem; margin: 14px 0 4px; }
+  input[type=text], input[type=tel], textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--paper); color: var(--ink); font: inherit;
+  }
+  textarea, .mono { font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace; font-size: 0.86rem; }
+  textarea { min-height: 120px; resize: vertical; word-break: break-all; }
+  :focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  button.act, label.act {
+    display: inline-block; margin: 0; padding: 10px 16px; border-radius: 8px; cursor: pointer;
+    font: inherit; font-weight: 600; font-size: 0.95rem;
+    border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+  }
+  button.quiet, label.quiet { background: transparent; color: var(--ink); border-color: var(--line); }
+  button.danger { background: transparent; color: var(--bad); border-color: var(--bad); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .result { margin-top: 16px; padding: 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); }
+  .result.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .result.bad { border-color: var(--bad); background: var(--bad-soft); }
+  .result dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; }
+  .result dt { color: var(--muted); }
+  .result dd { margin: 0; word-break: break-word; }
+  .keyout { word-break: break-all; margin: 0 0 4px; }
+  .msg { margin-top: 12px; color: var(--bad); font-weight: 600; }
+
+  .scroll { overflow-x: auto; margin-top: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  th, td { text-align: start; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; margin-top: 14px; }
+  .check input { margin-top: 5px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>License desk</h1>
+  <p class="muted">Create and check license keys for your apps. Works offline. Nothing leaves this device.</p>
+
+  <div class="keybar" id="keybar">
+    <strong id="keystate">No signing key loaded</strong>
+    <label class="act quiet">Load signing key<input type="file" id="loadKey" accept=".pem,.txt" hidden></label>
+  </div>
+
+  <nav role="tablist">
+    <button role="tab" data-tab="create" aria-selected="true">Create key</button>
+    <button role="tab" data-tab="check" aria-selected="false">Check key</button>
+    <button role="tab" data-tab="issued" aria-selected="false">Issued keys</button>
+    <button role="tab" data-tab="setup" aria-selected="false">Signing key</button>
+  </nav>
+
+  <section id="tab-create">
+    <h2>Create a license key</h2>
+    <p class="muted">The customer reads the device ID from the activation screen of the app.</p>
+    <label for="cProduct">Product code</label>
+    <input type="text" id="cProduct" class="mono" placeholder="KIT" maxlength="5" autocomplete="off" autocapitalize="characters">
+    <p class="muted" style="margin:4px 0 0">The code set in the app (productCode). Load that product's own signing key.</p>
+    <label for="cDevice">Device ID</label>
+    <input type="text" id="cDevice" class="mono" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters">
+    <label for="cEdition">Edition</label>
+    <select id="cEdition"><option value="shop">Shop: the PC with up to 3 phones</option><option value="phone">Phone only: the Android app on its own</option></select>
+    <label for="cName">Customer or business name</label>
+    <input type="text" id="cName" autocomplete="off">
+    <label for="cPhone">Customer WhatsApp number (optional, with country code)</label>
+    <input type="tel" id="cPhone" placeholder="213550000000" autocomplete="off">
+    <div class="row"><button class="act" id="createBtn">Create key</button></div>
+    <div class="msg" id="cMsg" hidden></div>
+    <div class="result ok" id="cResult" hidden>
+      <p class="mono keyout" id="cKey"></p>
+      <div class="row">
+        <button class="act" id="copyBtn">Copy key</button>
+        <button class="act quiet" id="waBtn">Send by WhatsApp</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-check" hidden>
+    <h2>Check a license key</h2>
+    <p class="muted">Paste a key to see who it was issued to and whether it is genuine.</p>
+    <label for="kKey">License key</label>
+    <textarea id="kKey" spellcheck="false"></textarea>
+    <label for="kDevice">Device ID to compare (optional)</label>
+    <input type="text" id="kDevice" class="mono" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off">
+    <div class="row"><button class="act" id="checkBtn">Check key</button></div>
+    <div class="msg" id="kMsg" hidden></div>
+    <div class="result" id="kResult" hidden><dl id="kList"></dl></div>
+  </section>
+
+  <section id="tab-issued" hidden>
+    <h2>Issued keys</h2>
+    <p class="muted">Kept in this browser on this device only. Export it regularly as your backup.</p>
+    <div class="row">
+      <button class="act quiet" id="exportBtn">Export as CSV</button>
+      <button class="act danger" id="clearBtn">Clear list</button>
+    </div>
+    <p class="muted" id="emptyLog" style="margin-top:14px">No keys issued from this device yet. Create one and it appears here.</p>
+    <div class="scroll"><table id="logTable" hidden>
+      <thead><tr><th>Date</th><th>Product</th><th>Customer</th><th>Device ID</th><th>Phone</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
+  <section id="tab-setup" hidden>
+    <h2>Your signing key</h2>
+    <p>The signing key is what makes your license keys genuine. Create it once, then load the same file every time.</p>
+    <p class="muted">Creating a new one gives you two files. <b>license-private.pem</b> stays secret: back it up offline and never share it. <b>license-public.pem</b> goes inside the app. Keys signed with a different signing key will not activate your app.</p>
+    <div class="row">
+      <button class="act" id="genBtn">Create a new signing key</button>
+      <button class="act quiet" id="pubBtn" disabled>Download public key</button>
+      <button class="act quiet" id="pubCopyBtn" disabled>Copy public key</button>
+    </div>
+    <label class="check"><input type="checkbox" id="remember">
+      <span>Remember the signing key in this browser. Only tick this on a device that nobody else uses.</span></label>
+    <div class="row"><button class="act danger" id="forgetBtn">Forget signing key on this device</button></div>
+    <div class="msg" id="sMsg" hidden></div>
+  </section>
+</main>
+
+<script>
+/* CORE-START: same key format as license-tool.mjs */
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const SIG_LEN = 64;
+const ALG = { name: 'Ed25519' };
+
+function base32Encode(bytes) {
+  let bits = 0, value = 0, out = '';
+  for (const b of bytes) {
+    value = ((value << 8) | b) & 0xffff; bits += 8;
+    while (bits >= 5) { out += ALPHABET[(value >>> (bits - 5)) & 31]; bits -= 5; }
+  }
+  if (bits > 0) out += ALPHABET[(value << (5 - bits)) & 31];
+  return out;
+}
+function base32Decode(str) {
+  let bits = 0, value = 0; const out = [];
+  for (const ch of str) {
+    const idx = ALPHABET.indexOf(ch);
+    if (idx === -1) throw new Error('The key contains a character that is not allowed: ' + ch);
+    value = ((value << 5) | idx) & 0xffff; bits += 5;
+    if (bits >= 8) { out.push((value >>> (bits - 8)) & 255); bits -= 8; }
+  }
+  return new Uint8Array(out);
+}
+const normalizeDevice = d => String(d).toUpperCase().replace(/[^0-9A-F]/g, '');
+const group = (s, n) => s.match(new RegExp('.{1,' + n + '}', 'g')).join('-');
+
+function pemToDer(pem) {
+  const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+function derToPem(der, label) {
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(der)));
+  return '-----BEGIN ' + label + '-----\n' + b64.match(/.{1,64}/g).join('\n') + '\n-----END ' + label + '-----\n';
+}
+async function importPrivate(pem) {
+  if (!/BEGIN PRIVATE KEY/.test(pem)) throw new Error('This is not a private key file. Load license-private.pem.');
+  const priv = await crypto.subtle.importKey('pkcs8', pemToDer(pem), ALG, true, ['sign']);
+  const jwk = await crypto.subtle.exportKey('jwk', priv);
+  const pub = await crypto.subtle.importKey('jwk', { kty: 'OKP', crv: 'Ed25519', x: jwk.x }, ALG, true, ['verify']);
+  return { priv, pub };
+}
+async function generatePair() {
+  const pair = await crypto.subtle.generateKey(ALG, true, ['sign', 'verify']);
+  return {
+    priv: pair.privateKey, pub: pair.publicKey,
+    privPem: derToPem(await crypto.subtle.exportKey('pkcs8', pair.privateKey), 'PRIVATE KEY'),
+  };
+}
+async function publicPem(pub) {
+  return derToPem(await crypto.subtle.exportKey('spki', pub), 'PUBLIC KEY');
+}
+async function createLicense(priv, product, device, name, edition, issued) {
+  const d = normalizeDevice(device);
+  if (d.length !== 16) throw new Error('The device ID must be 16 characters, digits 0-9 and letters A-F.');
+  const p = String(product).trim().toUpperCase();
+  if (!/^[A-Z0-9]{2,5}$/.test(p)) throw new Error('Enter the product code: 2 to 5 letters or digits.');
+  if (!name.trim()) throw new Error('Enter the customer or business name.');
+  const payload = new TextEncoder().encode(JSON.stringify({ p, d: group(d, 4), n: name.trim(), e: edition, i: issued }));
+  const sig = new Uint8Array(await crypto.subtle.sign(ALG, priv, payload));
+  const all = new Uint8Array(sig.length + payload.length);
+  all.set(sig); all.set(payload, sig.length);
+  return group(base32Encode(all), 5);
+}
+async function decodeLicense(key, pub) {
+  const raw = base32Decode(key.toUpperCase().replace(/[^A-Z2-7]/g, ''));
+  if (raw.length <= SIG_LEN) throw new Error('The key is too short. Paste the whole key.');
+  const sig = raw.slice(0, SIG_LEN), payload = raw.slice(SIG_LEN);
+  let p;
+  try { p = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(payload)); }
+  catch { throw new Error('The key is damaged or incomplete. Paste the whole key again.'); }
+  const valid = pub ? await crypto.subtle.verify(ALG, pub, sig, payload) : null;
+  return { product: p.p, deviceId: p.d, customer: p.n, edition: p.e, issued: p.i, signatureValid: valid };
+}
+/* CORE-END */
+
+const $ = id => document.getElementById(id);
+let keys = null;       // { priv, pub }
+let lastKey = '';
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); return true; } catch { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+const show = (el, text) => { el.textContent = text; el.hidden = false; };
+const hide = el => { el.hidden = true; };
+
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+function setKeys(k) {
+  keys = k;
+  $('keybar').classList.toggle('loaded', !!k);
+  $('keystate').textContent = k ? 'Signing key loaded' : 'No signing key loaded';
+  $('pubBtn').disabled = !k;
+  $('pubCopyBtn').disabled = !k;
+}
+
+document.querySelectorAll('nav button').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b === btn));
+  document.querySelectorAll('main > section').forEach(s => s.hidden = s.id !== 'tab-' + btn.dataset.tab);
+}));
+
+$('loadKey').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  try {
+    const pem = await file.text();
+    setKeys(await importPrivate(pem));
+    if ($('remember').checked) store.set('signingKey', pem);
+    hide($('sMsg')); hide($('cMsg'));
+  } catch (err) { alert(err.message || 'This file could not be read as a signing key.'); }
+  e.target.value = '';
+});
+
+$('genBtn').addEventListener('click', async () => {
+  if (keys && !confirm('A signing key is already loaded. Keys made with a new one will not work in apps built with the old one. Create a new signing key anyway?')) return;
+  try {
+    const g = await generatePair();
+    setKeys({ priv: g.priv, pub: g.pub });
+    download('license-private.pem', g.privPem);
+    setTimeout(async () => download('license-public.pem', await publicPem(g.pub)), 400);
+    if ($('remember').checked) store.set('signingKey', g.privPem);
+    show($('sMsg'), 'Signing key created. Two files were downloaded. Back up license-private.pem now.');
+    $('sMsg').style.color = 'var(--ok)';
+  } catch { show($('sMsg'), 'This browser cannot create signing keys. Use a recent Chrome, Edge, Safari or Firefox.'); }
+});
+$('pubBtn').addEventListener('click', async () => download('license-public.pem', await publicPem(keys.pub)));
+$('pubCopyBtn').addEventListener('click', async e => copyText(await publicPem(keys.pub), e.target));
+$('remember').addEventListener('change', async e => {
+  store.set('remember', e.target.checked ? '1' : '');
+  if (!e.target.checked) store.del('signingKey');
+  else if (keys) store.set('signingKey', derToPem(await crypto.subtle.exportKey('pkcs8', keys.priv), 'PRIVATE KEY'));
+});
+$('forgetBtn').addEventListener('click', () => {
+  store.del('signingKey'); store.set('remember', ''); $('remember').checked = false; setKeys(null);
+});
+
+$('createBtn').addEventListener('click', async () => {
+  hide($('cMsg')); hide($('cResult'));
+  if (!keys) return show($('cMsg'), 'Load your signing key first, using the button at the top.');
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    store.set('product', $('cProduct').value.trim().toUpperCase());
+    lastKey = await createLicense(keys.priv, $('cProduct').value, $('cDevice').value, $('cName').value, $('cEdition').value, today);
+    $('cKey').textContent = lastKey; $('cResult').hidden = false;
+    addLog({ date: today, product: $('cProduct').value.trim().toUpperCase(), name: $('cName').value.trim(), device: group(normalizeDevice($('cDevice').value), 4),
+             phone: $('cPhone').value.trim(), key: lastKey });
+  } catch (err) { show($('cMsg'), err.message); }
+});
+async function copyText(text, btn) {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t);
+    t.select(); document.execCommand('copy'); t.remove();
+  }
+  const old = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = old, 1500);
+}
+$('copyBtn').addEventListener('click', e => copyText(lastKey, e.target));
+$('waBtn').addEventListener('click', () => {
+  const phone = $('cPhone').value.replace(/\D/g, '');
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(lastKey), '_blank');
+});
+
+$('checkBtn').addEventListener('click', async () => {
+  hide($('kMsg')); hide($('kResult'));
+  try {
+    const lic = await decodeLicense($('kKey').value, keys ? keys.pub : null);
+    const rows = [['Product', lic.product || '(none)'], ['Device ID', lic.deviceId], ['Customer', lic.customer], ['Edition', lic.edition], ['Issued', lic.issued]];
+    let ok = lic.signatureValid === true;
+    rows.push(['Signature', lic.signatureValid === null ? 'Not checked. Load your signing key to check it.'
+      : lic.signatureValid ? 'Genuine, signed with your signing key' : 'Not genuine. It was changed or signed with another key.']);
+    const cmp = normalizeDevice($('kDevice').value);
+    if (cmp) {
+      const match = cmp === normalizeDevice(lic.deviceId);
+      rows.push(['Device', match ? 'Matches' : 'Does not match ' + $('kDevice').value]);
+      ok = ok && match;
+    }
+    const dl = $('kList'); dl.textContent = '';
+    for (const [k, v] of rows) {
+      const dt = document.createElement('dt'); dt.textContent = k;
+      const dd = document.createElement('dd'); dd.textContent = v; dl.append(dt, dd);
+    }
+    $('kResult').className = 'result ' + (lic.signatureValid === null ? '' : ok ? 'ok' : 'bad');
+    $('kResult').hidden = false;
+  } catch (err) { show($('kMsg'), err.message); }
+});
+
+function readLog() { try { return JSON.parse(store.get('issued') || '[]'); } catch { return []; } }
+function addLog(entry) { const log = readLog(); log.unshift(entry); store.set('issued', JSON.stringify(log)); renderLog(); }
+function renderLog() {
+  const log = readLog(), body = $('logTable').tBodies[0];
+  body.textContent = '';
+  $('logTable').hidden = log.length === 0; $('emptyLog').hidden = log.length > 0;
+  log.forEach(e => {
+    const tr = body.insertRow();
+    [e.date, e.product || '', e.name, e.device, e.phone || ''].forEach(v => tr.insertCell().textContent = v);
+    const b = document.createElement('button'); b.className = 'act quiet'; b.textContent = 'Copy key';
+    b.addEventListener('click', () => copyText(e.key, b)); tr.insertCell().append(b);
+  });
+}
+$('exportBtn').addEventListener('click', () => {
+  const q = v => '"' + String(v || '').replace(/"/g, '""') + '"';
+  const csv = ['Date,Product,Customer,Device ID,Phone,Key', ...readLog().map(e => [e.date, e.product, e.name, e.device, e.phone, e.key].map(q).join(','))].join('\r\n');
+  download('issued-keys.csv', '\ufeff' + csv);
+});
+$('clearBtn').addEventListener('click', () => {
+  if (confirm('Clear the list of issued keys on this device? Export it first if you need a copy.')) { store.del('issued'); renderLog(); }
+});
+
+(async function start() {
+  renderLog();
+  $('cProduct').value = store.get('product') || '';
+  $('remember').checked = store.get('remember') === '1';
+  const saved = store.get('signingKey');
+  if (saved) { try { setKeys(await importPrivate(saved)); } catch { store.del('signingKey'); } }
+})();
+</script>
+</body>
+</html>

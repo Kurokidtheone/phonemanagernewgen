@@ -1,0 +1,22 @@
+{
+  "from_rust": {
+    "device": "device-1",
+    "key": "Q0Rf5oPY_5eq-6GLJLcs3UkwVLPKQKzkq-IBSQOTIb4",
+    "mailbox": "KroL2xGWEAA5mBLAbVc9peZZ-WVIHHEL0eQ3QO7LHC8",
+    "plain": "{\"id\":\"r1\",\"ts\":1700000000000,\"method\":\"POST\",\"path\":\"/api/units.list\",\"body\":{\"q\":\"é\"}}",
+    "sealed": {
+      "c": "KS0jV8PUXUjYid6jvtyGbXp6lAgFK7CdKLDQnUq6P3_JRnElCrhe5hHQwnFQynm3OiPqo3cmNKLZfeBb1zbCbAkbC9UvCyI73q8reRHOcJKv-zY-iO_wEhgVucrfYu7IAKyo9VF8fpFC",
+      "n": "U_X7V_DoU5vjq8XZ6H2BJDoAY0DE5TSv"
+    }
+  },
+  "from_ts": {
+    "key": "384pBFGZmf3wY4TCHfeZBEfdXRy5DuRSNJVs6IqvAsI",
+    "mailbox": "iBmF7SBqADDHlH_P63NkRgXSM-FJ8KprCKOsgn5_VGM",
+    "device": "device-2",
+    "plain": "{\"id\":\"r2\",\"ts\":1700000000001,\"method\":\"GET\",\"path\":\"/me\",\"body\":{\"x\":\"ا\"}}",
+    "sealed": {
+      "n": "5LiaVS9gkKLRggnvv9jINaioNT6dwvMi",
+      "c": "Jh5pJCXGuGqt8riAI1rgmoLUIuT78mTEgbQp0PGOwasEXYhzVCGkYSH7f4DmakhleAiFOCAH7g1vr9LTs7xME22uqf43X5OsAfmqKG81GWcbQWoL7VfkSq_-A9M"
+    }
+  }
+}

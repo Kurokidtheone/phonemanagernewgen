@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The shop PC is reached over plain http on the shop network, by IP address. Android's network security config
+  cannot restrict cleartext traffic to address ranges (a <domain> is a name or one exact address), so cleartext
+  stays allowed here and the app itself refuses plain http to anything that is not a private shop-network address
+  (src/lib/http.ts: assertAllowedUrl). Supabase and every other host must be https.
+  Only the system certificate authorities are trusted: no user-installed certificate can intercept the mailbox traffic.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

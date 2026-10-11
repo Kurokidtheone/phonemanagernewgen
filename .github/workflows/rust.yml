@@ -1,0 +1,52 @@
+name: Rust crates
+on:
+  push:
+    paths: ['wire/**', 'remote/**', 'core/**', 'mobile/core-android/**', 'src-tauri/**', 'src/shared/**', 'Cargo.toml', 'Cargo.lock', '.github/workflows/rust.yml']
+  pull_request:
+    paths: ['wire/**', 'remote/**', 'core/**', 'mobile/core-android/**', 'src-tauri/**', 'src/shared/**', 'Cargo.toml', 'Cargo.lock']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: 'clippy, rustfmt' }
+      - uses: Swatinem/rust-cache@v2
+      # What Tauri needs to compile on Linux (the app itself only ships for Windows).
+      - name: Install the WebKitGTK libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      # The tests rewrite src/shared/api.ts from the Rust types: it must already be up to date in the commit.
+      - name: The generated TypeScript API is current
+        run: git diff --exit-code -- src/shared/api.ts
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # Printing and the printer list use Windows APIs that only compile here.
+      - run: cargo check -p phone-store-manager --all-targets
+
+  # The same core, compiled for Android (phase 18): the stand-alone phone edition ships it as a .so.
+  android-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: 'aarch64-linux-android,armv7-linux-androideabi' }
+      - uses: nttld/setup-ndk@v1
+        id: ndk
+        with: { ndk-version: r27c }
+      - name: Compile the core for Android
+        env:
+          NDK_BIN: ${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin
+        run: |
+          export CC_aarch64_linux_android=$NDK_BIN/aarch64-linux-android24-clang AR_aarch64_linux_android=$NDK_BIN/llvm-ar CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$NDK_BIN/aarch64-linux-android24-clang
+          export CC_armv7_linux_androideabi=$NDK_BIN/armv7a-linux-androideabi24-clang AR_armv7_linux_androideabi=$NDK_BIN/llvm-ar CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER=$NDK_BIN/armv7a-linux-androideabi24-clang
+          cargo build -p psm-android --release --target aarch64-linux-android
+          cargo build -p psm-android --release --target armv7-linux-androideabi

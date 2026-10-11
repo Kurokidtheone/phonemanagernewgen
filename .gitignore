@@ -1,0 +1,32 @@
+node_modules
+out
+dist
+license-keys/license-private.pem
+*.log
+.DS_Store
+
+license-keys.previous/
+license-keys/license-private.pem
+
+mobile/node_modules
+mobile/dist
+mobile/android/.gradle
+mobile/android/build
+mobile/android/app/build
+mobile/android/local.properties
+mobile/android/app/src/main/assets/public
+mobile/android/capacitor-cordova-android-plugins
+
+# Android signing: never commit the keystore or its passwords
+mobile/android/keystore.properties
+mobile/android/*.keystore
+mobile/android/*.jks
+*.keystore
+*.jks
+# APKs built for customers and the copy packed into the desktop installer
+*.apk
+build/mobile/
+
+# Rust
+/target/
+mobile/android/app/src/main/jniLibs/
