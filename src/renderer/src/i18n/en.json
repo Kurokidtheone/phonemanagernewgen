@@ -864,7 +864,9 @@
       "deleted": "Item deleted",
       "deleteTitle": "Delete this item?",
       "deleteBody": "It disappears from the lists. Past sales and repairs that used it are kept.",
-      "noCategory": "Add a category first, from Brands and categories."
+      "noCategory": "No categories yet: type a name in the Category field to add one.",
+      "pickCategory": "Pick or type a category",
+      "categoryAdded": "Category added"
     },
     "catalog": {
       "searchBrands": "Search brands…",

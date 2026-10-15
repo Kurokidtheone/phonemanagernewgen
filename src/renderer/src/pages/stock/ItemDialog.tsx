@@ -57,6 +57,12 @@ export function ItemDialog({ item, prefillBarcode, onClose }: { item?: Item; pre
     { success: item ? t('stock.itemForm.updated') : t('stock.itemForm.saved'), invalidate: [['items']], onDone: onClose },
   );
   const createBrand = useAction((name: string) => api('brands.create', { name }), { invalidate: [['brands']], onDone: (b) => setBrandId(b.id) });
+  // A category typed here is saved at once, so it is offered in the list next time.
+  const createCategory = useAction((name: string) => api('categories.create', { name, kind: repairPart ? 'PART' : 'ACCESSORY' }), {
+    success: t('stock.itemForm.categoryAdded'),
+    invalidate: [['categories']],
+    onDone: (c) => setCategoryId(c.id),
+  });
   const generate = useAction(() => api('items.generateBarcode'), { onDone: setBarcode });
   const remove = useAction(() => api('items.delete', { id: item!.id }), { success: t('stock.itemForm.deleted'), invalidate: [['items']], onDone: onClose });
 
@@ -75,13 +81,7 @@ export function ItemDialog({ item, prefillBarcode, onClose }: { item?: Item; pre
             <Input autoFocus={!barcode} value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
           <Field label={t('stock.itemForm.category')} required>
-            <select className="input" value={category} onChange={(e) => setCategoryId(e.target.value)}>
-              {itemCategories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <SearchSelect options={itemCategories} value={category} onChange={setCategoryId} placeholder={t('stock.itemForm.pickCategory')} onCreate={(name) => createCategory.mutate(name)} />
           </Field>
           <Field label={t('stock.itemForm.brand')}>
             <SearchSelect options={brands.data ?? []} value={brandId} onChange={setBrandId} placeholder={t('stock.itemForm.noBrand')} emptyLabel={t('stock.itemForm.noBrand')} onCreate={(name) => createBrand.mutate(name)} />

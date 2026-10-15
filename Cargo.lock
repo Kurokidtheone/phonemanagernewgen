@@ -3029,7 +3029,7 @@ dependencies = [
 
 [[package]]
 name = "phone-store-manager"
-version = "1.5.8"
+version = "1.5.9"
 dependencies = [
  "futures-util",
  "percent-encoding",
@@ -3254,7 +3254,7 @@ dependencies = [
 
 [[package]]
 name = "psm-android"
-version = "1.5.8"
+version = "1.5.9"
 dependencies = [
  "jni",
  "psm-core",
@@ -3265,7 +3265,7 @@ dependencies = [
 
 [[package]]
 name = "psm-core"
-version = "1.5.8"
+version = "1.5.9"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -3559,7 +3559,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "remote"
-version = "1.5.8"
+version = "1.5.9"
 dependencies = [
  "axum",
  "futures-util",
@@ -5987,7 +5987,7 @@ dependencies = [
 
 [[package]]
 name = "wire"
-version = "1.5.8"
+version = "1.5.9"
 dependencies = [
  "base64 0.22.1",
  "chacha20poly1305",

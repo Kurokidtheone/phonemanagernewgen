@@ -1,6 +1,6 @@
 {
   "name": "phone-store-manager-mobile",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "private": true,
   "description": "Android companion for Phone Store Manager",
   "type": "module",

@@ -864,7 +864,9 @@
       "deleted": "Article supprimé",
       "deleteTitle": "Supprimer cet article ?",
       "deleteBody": "Il disparaît des listes. Les ventes et réparations passées qui l'ont utilisé sont conservées.",
-      "noCategory": "Ajoutez d'abord une catégorie, depuis Marques et catégories."
+      "noCategory": "Aucune catégorie : tapez un nom dans le champ Catégorie pour l'ajouter.",
+      "pickCategory": "Choisissez ou tapez une catégorie",
+      "categoryAdded": "Catégorie ajoutée"
     },
     "catalog": {
       "searchBrands": "Rechercher une marque…",

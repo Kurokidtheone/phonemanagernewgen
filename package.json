@@ -1,7 +1,7 @@
 {
   "name": "phone-store-manager",
   "productName": "Phone Store Manager",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "description": "Offline desktop app for mobile phone shops in Algeria",
   "author": "Next Level Dev Labs",
   "private": true,
